@@ -1,0 +1,14 @@
+[package]
+name = "weatherboy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+color-eyre = "0.6.5"
+crossterm = "0.29.0"
+rand = "0.10.0"
+ratatui = "0.30.0"
+terminal_size = "0.4.3"
+
+[dev-dependencies]
+test-case = "3.3.1"
