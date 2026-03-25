@@ -74,7 +74,7 @@ impl WeatherView<'_> {
     }
 
     fn render_rain(&self, area: Rect, buf: &mut Buffer, state: &mut WeatherViewState) {
-        if matches!(self.world.weather.condition, WeatherCondition::Rainy(_)) {
+        if !matches!(self.world.weather.condition, WeatherCondition::Rainy(_)) {
             return;
         }
 
