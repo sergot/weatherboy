@@ -27,6 +27,7 @@ pub enum Wind {
 }
 
 impl Wind {
+    // follows meteorological convention: wind direction indicates where the wind blows *from*
     pub fn horizontal_speed(&self) -> f32 {
         match self {
             Wind::Windy { speed, direction } => match direction {
