@@ -74,6 +74,10 @@ impl WeatherView<'_> {
     }
 
     fn render_rain(&self, area: Rect, buf: &mut Buffer, state: &mut WeatherViewState) {
+        if matches!(self.world.weather.condition, WeatherCondition::Rainy(_)) {
+            return;
+        }
+
         let wind_speed = self.world.weather.wind.horizontal_speed();
         let rain_char = match wind_speed {
             x if x < 0.0 => '/',
