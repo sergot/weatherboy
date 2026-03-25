@@ -6,7 +6,7 @@ use ratatui::{DefaultTerminal, Frame};
 
 use crate::{
     braille::{BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL},
-    weather::{Weather, WeatherCondition, Wind},
+    weather::{Direction, Weather, WeatherCondition, Wind},
     weather_view::{WeatherView, WeatherViewState},
     world::World,
 };
@@ -21,7 +21,7 @@ impl App {
     pub fn new(width: f32, height: f32) -> Self {
         let weather = Weather {
             condition: WeatherCondition::PartiallyCloudy,
-            wind: Wind::Windy { speed: 1.0 },
+            wind: Wind::Windy { speed: 1.0, direction: Direction::N },
         };
         Self {
             world: World::new(
