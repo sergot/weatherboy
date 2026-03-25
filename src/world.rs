@@ -1,4 +1,4 @@
-use rand::{RngExt, rngs::ThreadRng};
+use rand::{rngs::ThreadRng, RngExt};
 
 use crate::{
     cloud::{Cloud, CloudParams},
@@ -49,9 +49,10 @@ impl World {
     }
 
     pub fn tick(&mut self) {
-        if let Wind::Windy { speed } = &self.weather.wind {
+        let wind_speed = self.weather.wind.horizontal_speed();
+        if wind_speed != 0.0 {
             self.clouds.iter_mut().for_each(|cloud| {
-                cloud.tick(*speed);
+                cloud.tick(wind_speed);
                 if cloud.position.x > self.width + cloud.params.width {
                     cloud.regenerate(&mut self.rng);
                 }

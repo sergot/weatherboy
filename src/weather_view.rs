@@ -5,6 +5,7 @@ use ratatui::{buffer::Buffer, layout::Rect, widgets::StatefulWidget};
 use crate::{
     braille::{bayer, dots_to_braille},
     point::Point,
+    weather::{Direction, Wind},
     world::World,
 };
 
@@ -73,12 +74,20 @@ impl WeatherView<'_> {
     }
 
     fn render_rain(&self, area: Rect, buf: &mut Buffer, state: &mut WeatherViewState) {
+        let wind_speed = self.world.weather.wind.horizontal_speed();
+        let rain_char = match wind_speed {
+            x if x < 0.0 => '/',
+            x if x > 0.0 => '\\',
+            _ => '\'',
+        };
         for row in 0..area.height {
             for col in 0..area.width {
-                // XXX: should tick counter be u16?
-                let visible = Self::rain_hash(col, row.wrapping_sub(state.tick_counter));
+                let visible = Self::rain_hash(
+                    col.wrapping_sub_signed((state.tick_counter as f32 * wind_speed) as i16),
+                    row.wrapping_sub(state.tick_counter),
+                );
                 if visible > 0.98 {
-                    buf[(col, row)].set_char('|'); // TODO: change to .,/\ etc based on how heavy is the rain and wind
+                    buf[(col, row)].set_char(rain_char);
                 }
             }
         }
