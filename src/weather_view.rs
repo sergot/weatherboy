@@ -5,7 +5,7 @@ use ratatui::{buffer::Buffer, layout::Rect, widgets::StatefulWidget};
 use crate::{
     braille::{bayer, dots_to_braille},
     point::Point,
-    weather::{Direction, Wind},
+    weather::WeatherCondition,
     world::World,
 };
 
