@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: remove
 mod app;
 mod braille;
 mod circle;
@@ -41,7 +40,7 @@ fn main() -> Result<()> {
     let terminal = ratatui::init();
 
     let size = terminal.size()?;
-    let mut app = App::new(size.width as f32, size.height as f32);
+    let mut app = App::new(size.width as f32, size.height as f32, rand::random());
     app.run(terminal)?;
     ratatui::restore();
     Ok(())

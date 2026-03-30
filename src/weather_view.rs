@@ -5,7 +5,6 @@ use ratatui::{buffer::Buffer, layout::Rect, widgets::StatefulWidget};
 use crate::{
     braille::{bayer, dots_to_braille},
     point::Point,
-    weather::WeatherCondition,
     world::World,
 };
 
@@ -38,6 +37,31 @@ impl WeatherView<'_> {
     fn render_sun(&self, _area: Rect, buf: &mut Buffer) {
         buf[(1, 1)].set_char('S'); // TODO: render a proper sun
     }
+
+    fn render_rain(&self, area: Rect, buf: &mut Buffer, state: &mut WeatherViewState) {
+        let Some(rain_intensity) = self.world.weather().rainfall_intensity() else {
+            return;
+        };
+
+        let wind_speed = self.world.weather().wind_speed();
+        let rain_char = match wind_speed {
+            x if x < 0.0 => '/',
+            x if x > 0.0 => '\\',
+            _ => '\'',
+        };
+        for row in 0..area.height {
+            for col in 0..area.width {
+                let visible = Self::rain_hash(
+                    col.wrapping_sub_signed((state.tick_counter as f32 * wind_speed) as i16),
+                    row.wrapping_sub(state.tick_counter),
+                );
+                if visible > 1.0 - rain_intensity {
+                    buf[(col, row)].set_char(rain_char);
+                }
+            }
+        }
+    }
+
     fn render_clouds(&self, area: Rect, buf: &mut Buffer) {
         for row in 0..(area.height as i32) {
             for col in 0..(area.width as i32) {
@@ -50,7 +74,7 @@ impl WeatherView<'_> {
                         let dot_y = (base_wy as usize) + i;
                         let density = self
                             .world
-                            .clouds
+                            .clouds()
                             .iter()
                             .map(|cloud| {
                                 cloud.density_at(Point {
@@ -69,30 +93,6 @@ impl WeatherView<'_> {
 
                 let braille = dots_to_braille(dots);
                 buf[(col as u16, row as u16)].set_char(braille);
-            }
-        }
-    }
-
-    fn render_rain(&self, area: Rect, buf: &mut Buffer, state: &mut WeatherViewState) {
-        if !matches!(self.world.weather.condition, WeatherCondition::Rainy(_)) {
-            return;
-        }
-
-        let wind_speed = self.world.weather.wind.horizontal_speed();
-        let rain_char = match wind_speed {
-            x if x < 0.0 => '/',
-            x if x > 0.0 => '\\',
-            _ => '\'',
-        };
-        for row in 0..area.height {
-            for col in 0..area.width {
-                let visible = Self::rain_hash(
-                    col.wrapping_sub_signed((state.tick_counter as f32 * wind_speed) as i16),
-                    row.wrapping_sub(state.tick_counter),
-                );
-                if visible > 0.98 {
-                    buf[(col, row)].set_char(rain_char);
-                }
             }
         }
     }
