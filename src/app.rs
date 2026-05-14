@@ -6,9 +6,8 @@ use ratatui::{DefaultTerminal, Frame};
 
 use crate::{
     braille::{BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL},
-    weather::{Direction, Precipitation, PrecipitationKind, Weather, Wind},
     weather_view::{WeatherView, WeatherViewState},
-    world::World,
+    world::{Direction, Precipitation, PrecipitationKind, Weather, Wind, World},
 };
 
 pub struct App {

@@ -27,6 +27,7 @@ impl StatefulWidget for WeatherView<'_> {
     type State = WeatherViewState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut WeatherViewState) {
+        // TODO: optimize it by unifying rendering into one loop
         self.render_sun(area, buf);
         self.render_rain(area, buf, state);
         self.render_clouds(area, buf);

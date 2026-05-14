@@ -1,7 +1,6 @@
 mod app;
 mod braille;
 mod circle;
-mod cloud;
 mod point;
 mod weather;
 mod weather_view;

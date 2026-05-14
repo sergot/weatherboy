@@ -1,10 +1,14 @@
+mod cloud;
+mod sky;
+mod weather;
+
 use rand::{rngs::SmallRng, Rng, RngExt, SeedableRng};
 
-use crate::{
-    cloud::{Cloud, CloudParams},
-    point::Point,
-    weather::Weather,
-};
+use crate::point::Point;
+
+use self::cloud::{Cloud, CloudParams};
+
+pub use self::weather::{Direction, Precipitation, PrecipitationKind, Weather, Wind};
 
 pub struct World {
     weather: Weather,
