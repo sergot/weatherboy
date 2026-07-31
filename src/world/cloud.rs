@@ -1,6 +1,6 @@
 use rand::{Rng, RngExt};
 
-use crate::{braille::sdf_density, circle::Circle, point::Point};
+use crate::{circle::Circle, point::Point};
 
 pub struct Cloud {
     position: Point,
@@ -84,4 +84,22 @@ impl Default for CloudParams {
             smoothness: 3.0,
         }
     }
+}
+
+fn sdf_circle(p: Point, circle: &Circle) -> f32 {
+    ((p.x - circle.center.x).powi(2) + (p.y - circle.center.y).powi(2)).sqrt() - circle.radius
+}
+
+fn smin(a: f32, b: f32, k: f32) -> f32 {
+    let h = (k - (a - b).abs()).max(0.0) / k;
+    a.min(b) - h * h * k * 0.25
+}
+
+fn sdf_density(p: Point, circles: &[Circle], k: f32) -> f32 {
+    let final_sdf = circles
+        .iter()
+        .map(|c| sdf_circle(p, c))
+        .fold(f32::INFINITY, |acc, sdf| smin(acc, sdf, k));
+
+    1.0 / (1.0 + final_sdf.exp())
 }

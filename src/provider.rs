@@ -2,9 +2,14 @@ mod open_meteo;
 
 use thiserror::Error;
 
-use crate::weather::{WeatherLocation, WeatherSnapshot};
-
 pub use open_meteo::OpenMeteoProvider;
+
+use crate::snapshot::WeatherSnapshot;
+
+pub struct WeatherLocation {
+    pub latitude: f64,
+    pub longitude: f64,
+}
 
 pub trait WeatherProvider {
     // TODO: location handling, units configuration
@@ -34,14 +39,13 @@ pub enum NetworkError {
 
     #[error("returned HTTP {0}")]
     HttpStatus(u16),
-
 }
 
 #[derive(Debug, Error)]
 pub enum ResponseDataError {
-     #[error("response body could not be decoded: {0}")]
-     Decode(String),
+    #[error("response body could not be decoded: {0}")]
+    Decode(String),
 
-     #[error("response field {0} has invalid value: {1}")]
-     InvalidField(String, String),
+    #[error("response field {0} has invalid value: {1}")]
+    InvalidField(String, String),
 }

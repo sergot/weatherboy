@@ -2,13 +2,13 @@ mod cloud;
 mod sky;
 mod weather;
 
-use rand::{rngs::SmallRng, Rng, RngExt, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng, rngs::SmallRng};
 
-use crate::point::Point;
+use weather::Weather;
 
-use self::cloud::{Cloud, CloudParams};
+use crate::{point::Point, snapshot::WeatherSnapshot};
 
-pub use self::weather::{Direction, Precipitation, PrecipitationKind, Weather, Wind};
+use cloud::{Cloud, CloudParams};
 
 pub struct World {
     weather: Weather,
@@ -29,6 +29,10 @@ impl World {
             clouds,
             rng,
         }
+    }
+
+    pub fn from_snapshot(snapshot: WeatherSnapshot, width: f32, height: f32, seed: u64) -> Self {
+        Self::new(width, height, Weather::from_snapshot(snapshot), seed)
     }
 
     pub fn resize(&mut self, width: f32, height: f32) {
