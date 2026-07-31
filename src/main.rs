@@ -42,7 +42,5 @@ async fn main() -> Result<()> {
     let world = World::from_snapshot(snapshot, width, height, rand::random());
 
     let mut app = App::new(world, Box::new(renderer));
-    let result = app.run();
-
-    result
+    app.run()
 }
