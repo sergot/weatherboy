@@ -1,12 +1,11 @@
 use std::{array, time::Duration};
 
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{DefaultTerminal, buffer::Buffer, layout::Rect, widgets::StatefulWidget};
 
 use crate::{
     point::Point,
     render::{
-        Renderer,
+        InputEvent, Renderer,
         braille::{BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL, bayer, dots_to_braille},
     },
     world::World,
@@ -25,14 +24,6 @@ impl TerminalRenderer {
             state: TerminalRendererState::default(),
         }
     }
-
-    pub fn viewport_size(&self) -> Result<(f32, f32)> {
-        let size = self.terminal.size()?;
-        Ok((
-            size.width as f32 * BRAILLE_COLS_PER_CELL,
-            size.height as f32 * BRAILLE_ROWS_PER_CELL,
-        ))
-    }
 }
 
 impl Drop for TerminalRenderer {
@@ -42,6 +33,14 @@ impl Drop for TerminalRenderer {
 }
 
 impl Renderer for TerminalRenderer {
+    fn viewport_size(&self) -> Result<(f32, f32)> {
+        let size = self.terminal.size()?;
+        Ok((
+            size.width as f32 * BRAILLE_COLS_PER_CELL,
+            size.height as f32 * BRAILLE_ROWS_PER_CELL,
+        ))
+    }
+
     fn render(&mut self, world: &World) -> Result<()> {
         let state = &mut self.state;
         self.terminal.draw(|frame| {
@@ -56,20 +55,13 @@ impl Renderer for TerminalRenderer {
     }
 
     fn poll_input(&mut self, world: &mut World) -> Result<bool> {
-        if event::poll(Duration::from_secs_f64(1.0 / 30.0))? {
-            match event::read()? {
-                Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
-                    KeyCode::Char('q') | KeyCode::Esc => return Ok(true),
-                    _ => {}
-                },
-                Event::Resize(w, h) => {
-                    world.resize(
-                        w as f32 * BRAILLE_COLS_PER_CELL,
-                        h as f32 * BRAILLE_ROWS_PER_CELL,
-                    );
-                }
-                _ => {}
-            }
+        match super::next_input_event(Duration::from_secs_f64(1.0 / 30.0))? {
+            Some(InputEvent::Quit) => return Ok(true),
+            Some(InputEvent::Resize { cols, rows }) => world.resize(
+                cols as f32 * BRAILLE_COLS_PER_CELL,
+                rows as f32 * BRAILLE_ROWS_PER_CELL,
+            ),
+            None => {}
         }
 
         Ok(false)
