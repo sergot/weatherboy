@@ -1,15 +1,12 @@
 mod protocol;
 
-use std::{
-    io::{stdout, Stdout, Write},
-    time::Duration,
-};
+use std::io::{stdout, Stdout, Write};
 
 use color_eyre::eyre::Result;
 use crossterm::{cursor, execute, queue, terminal};
 
 use crate::{
-    render::{InputEvent, Renderer, SampleGrid},
+    render::{Renderer, SampleGrid},
     world::World,
 };
 
@@ -119,19 +116,11 @@ impl Renderer for KittyRenderer {
 
     fn tick(&mut self) {}
 
-    fn poll_input(&mut self, world: &mut World) -> Result<bool> {
-        match super::next_input_event(Duration::from_secs_f64(1.0 / 30.0))? {
-            Some(InputEvent::Quit) => return Ok(true),
-            Some(InputEvent::Resize { cols, rows }) => {
-                (self.cols, self.rows) = (cols, rows);
-                self.out.write_all(&protocol::delete_all())?;
-                execute!(self.out, terminal::Clear(terminal::ClearType::All))?;
-                world.resize(super::terminal_aspect(cols, rows)?);
-            }
-            None => {}
-        }
-
-        Ok(false)
+    fn resize(&mut self, cols: u16, rows: u16) -> Result<()> {
+        (self.cols, self.rows) = (cols, rows);
+        self.out.write_all(&protocol::delete_all())?;
+        execute!(self.out, terminal::Clear(terminal::ClearType::All))?;
+        Ok(())
     }
 }
 

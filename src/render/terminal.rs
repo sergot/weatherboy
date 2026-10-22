@@ -1,11 +1,11 @@
-use std::{array, time::Duration};
+use std::array;
 
-use ratatui::{DefaultTerminal, buffer::Buffer, layout::Rect, widgets::StatefulWidget};
+use ratatui::{buffer::Buffer, layout::Rect, widgets::StatefulWidget, DefaultTerminal};
 
 use crate::{
     render::{
-        InputEvent, Renderer, SampleGrid,
-        braille::{BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL, bayer, dots_to_braille},
+        braille::{bayer, dots_to_braille, BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL},
+        Renderer, SampleGrid,
     },
     world::World,
 };
@@ -50,16 +50,8 @@ impl Renderer for TerminalRenderer {
         self.state.tick_counter = self.state.tick_counter.wrapping_add(1);
     }
 
-    fn poll_input(&mut self, world: &mut World) -> Result<bool> {
-        match super::next_input_event(Duration::from_secs_f64(1.0 / 30.0))? {
-            Some(InputEvent::Quit) => return Ok(true),
-            Some(InputEvent::Resize { cols, rows }) => {
-                world.resize(super::terminal_aspect(cols, rows)?)
-            }
-            None => {}
-        }
-
-        Ok(false)
+    fn resize(&mut self, _: u16, _: u16) -> Result<()> {
+        Ok(())
     }
 }
 
