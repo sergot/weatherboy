@@ -6,15 +6,11 @@ use color_eyre::eyre::Result;
 use crossterm::{cursor, execute, queue, terminal};
 
 use crate::{
-    appearance,
-    render::{Renderer, SampleGrid},
+    render::{Renderer, pixel::PixelStyle},
     world::World,
 };
 
 use protocol::Placement;
-
-const PIXELS_PER_COL: usize = 2;
-const PIXELS_PER_ROW: usize = 4;
 
 const IMAGE_ID: u32 = 1;
 const PLACEMENT_ID: u32 = 1;
@@ -23,11 +19,11 @@ pub struct KittyRenderer {
     out: Stdout,
     cols: u16,
     rows: u16,
-    rgb: Vec<u8>,
+    style: Box<dyn PixelStyle>,
 }
 
 impl KittyRenderer {
-    pub fn new() -> Result<Self> {
+    pub fn new(style: Box<dyn PixelStyle>) -> Result<Self> {
         let (cols, rows) = terminal::size()?;
         let mut out = stdout();
         terminal::enable_raw_mode()?;
@@ -41,15 +37,8 @@ impl KittyRenderer {
             out,
             cols,
             rows,
-            rgb: Vec::new(),
+            style,
         })
-    }
-
-    fn image_size(&self) -> (usize, usize) {
-        (
-            self.cols as usize * PIXELS_PER_COL,
-            self.rows as usize * PIXELS_PER_ROW,
-        )
     }
 }
 
@@ -67,22 +56,7 @@ impl Renderer for KittyRenderer {
     }
 
     fn render(&mut self, world: &World) -> Result<()> {
-        let (width, height) = self.image_size();
-        let grid = SampleGrid {
-            width,
-            height,
-            aspect: world.aspect(),
-        };
-        self.rgb.clear();
-        self.rgb.reserve(width * height * 3);
-
-        for y in 0..height {
-            for x in 0..width {
-                let color = appearance::sample(world, grid.to_world(x, y)).color;
-                self.rgb
-                    .extend(color.map(|c| (c.clamp(0.0, 1.0) * 255.0).round() as u8));
-            }
-        }
+        let image = self.style.draw(world, self.cols, self.rows);
 
         let placement = Placement {
             image_id: IMAGE_ID,
@@ -92,7 +66,10 @@ impl Renderer for KittyRenderer {
         };
         queue!(self.out, cursor::MoveTo(0, 0))?;
         self.out.write_all(&protocol::transmit_and_display(
-            &self.rgb, width, height, &placement,
+            &image.rgb,
+            image.width,
+            image.height,
+            &placement,
         ))?;
         self.out.flush()?;
         Ok(())

@@ -1,11 +1,14 @@
 mod braille;
 mod kitty;
+mod pixel;
+mod smooth;
 mod terminal;
 
 use crate::{point::Point, world::World};
 use color_eyre::eyre::Result;
 
 pub use kitty::KittyRenderer;
+pub use smooth::SmoothStyle;
 pub use terminal::TerminalRenderer;
 
 pub trait Renderer {

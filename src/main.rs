@@ -12,7 +12,7 @@ use color_eyre::eyre::Result;
 
 use crate::app::App;
 use crate::provider::{OpenMeteoProvider, WeatherLocation, WeatherProvider};
-use crate::render::{KittyRenderer, Renderer, TerminalRenderer};
+use crate::render::{KittyRenderer, Renderer, SmoothStyle, TerminalRenderer};
 use crate::world::World;
 
 #[derive(Debug, Parser)]
@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
 
     let renderer: Box<dyn Renderer> = match args.backend {
         Backend::Braille => Box::new(TerminalRenderer::new()),
-        Backend::Kitty => Box::new(KittyRenderer::new()?),
+        Backend::Kitty => Box::new(KittyRenderer::new(Box::new(SmoothStyle::new()))?),
     };
     let world = World::from_snapshot(snapshot, renderer.aspect()?, rand::random());
 
