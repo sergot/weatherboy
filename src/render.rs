@@ -8,6 +8,7 @@ use crate::{point::Point, world::World};
 use color_eyre::eyre::Result;
 
 pub use kitty::KittyRenderer;
+pub use pixel::PixelStyle;
 pub use smooth::SmoothStyle;
 pub use terminal::TerminalRenderer;
 
@@ -27,22 +28,26 @@ pub enum InputEvent {
     Resize { cols: u16, rows: u16 },
 }
 
-const FALLBACK_CELL_SIZE: (f32, f32) = (1.0, 2.0);
+const FALLBACK_CELL_SIZE: (f32, f32) = (8.0, 16.0);
 
-pub fn terminal_aspect(cols: u16, rows: u16) -> Result<f32> {
+pub fn cell_size() -> Result<(f32, f32)> {
     let size = crossterm::terminal::window_size()?;
-    let cell_size =
-        (size.width > 0 && size.height > 0 && size.columns > 0 && size.rows > 0).then(|| {
-            (
-                size.width as f32 / size.columns as f32,
-                size.height as f32 / size.rows as f32,
-            )
-        });
-    Ok(aspect_of(cols, rows, cell_size))
+    let reported = size.width > 0 && size.height > 0 && size.columns > 0 && size.rows > 0;
+    Ok(if reported {
+        (
+            size.width as f32 / size.columns as f32,
+            size.height as f32 / size.rows as f32,
+        )
+    } else {
+        FALLBACK_CELL_SIZE
+    })
 }
 
-fn aspect_of(cols: u16, rows: u16, cell_size: Option<(f32, f32)>) -> f32 {
-    let (cell_w, cell_h) = cell_size.unwrap_or(FALLBACK_CELL_SIZE);
+pub fn terminal_aspect(cols: u16, rows: u16) -> Result<f32> {
+    Ok(aspect_of(cols, rows, cell_size()?))
+}
+
+fn aspect_of(cols: u16, rows: u16, (cell_w, cell_h): (f32, f32)) -> f32 {
     (cols as f32 * cell_w) / (rows.max(1) as f32 * cell_h)
 }
 
@@ -66,10 +71,10 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(80, 24, Some((10.0, 20.0)) => is almost_equal_to 80.0 * 10.0 / (24.0 * 20.0) precision 1e-6; "reported cell size")]
-    #[test_case(80, 40, None => is almost_equal_to 1.0 precision 1e-6; "fallback cells are 1:2")]
-    #[test_case(80, 0, None => is almost_equal_to 40.0 precision 1e-6; "zero rows don't divide by zero")]
-    fn aspect(cols: u16, rows: u16, cell_size: Option<(f32, f32)>) -> f32 {
+    #[test_case(80, 24, (10.0, 20.0) => is almost_equal_to 80.0 * 10.0 / (24.0 * 20.0) precision 1e-6; "reported cell size")]
+    #[test_case(80, 40, FALLBACK_CELL_SIZE => is almost_equal_to 1.0 precision 1e-6; "fallback cells are 1:2")]
+    #[test_case(80, 0, FALLBACK_CELL_SIZE => is almost_equal_to 40.0 precision 1e-6; "zero rows don't divide by zero")]
+    fn aspect(cols: u16, rows: u16, cell_size: (f32, f32)) -> f32 {
         aspect_of(cols, rows, cell_size)
     }
 

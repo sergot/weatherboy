@@ -12,7 +12,7 @@ use color_eyre::eyre::Result;
 
 use crate::app::App;
 use crate::provider::{OpenMeteoProvider, WeatherLocation, WeatherProvider};
-use crate::render::{KittyRenderer, Renderer, SmoothStyle, TerminalRenderer};
+use crate::render::{KittyRenderer, PixelStyle, Renderer, SmoothStyle, TerminalRenderer};
 use crate::world::World;
 
 #[derive(Debug, Parser)]
@@ -24,14 +24,22 @@ struct Args {
     #[arg(long)]
     lon: f64,
 
-    #[arg(long, value_enum, default_value_t = Backend::Braille)]
+    #[arg(long, value_enum, default_value_t = Backend::Kitty)]
     backend: Backend,
+
+    #[arg(long, value_enum, default_value_t = Style::Smooth)]
+    style: Style,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 enum Backend {
     Braille,
     Kitty,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum Style {
+    Smooth,
 }
 
 #[tokio::main]
@@ -49,7 +57,12 @@ async fn main() -> Result<()> {
 
     let renderer: Box<dyn Renderer> = match args.backend {
         Backend::Braille => Box::new(TerminalRenderer::new()),
-        Backend::Kitty => Box::new(KittyRenderer::new(Box::new(SmoothStyle::new()))?),
+        Backend::Kitty => {
+            let style: Box<dyn PixelStyle> = match args.style {
+                Style::Smooth => Box::new(SmoothStyle::new()),
+            };
+            Box::new(KittyRenderer::new(style)?)
+        }
     };
     let world = World::from_snapshot(snapshot, renderer.aspect()?, rand::random());
 

@@ -2,7 +2,7 @@ use crate::{
     appearance,
     render::{
         SampleGrid,
-        pixel::{PixelImage, PixelStyle},
+        pixel::{PixelImage, PixelStyle, View},
     },
     world::World,
 };
@@ -27,10 +27,10 @@ impl SmoothStyle {
 }
 
 impl PixelStyle for SmoothStyle {
-    fn draw(&mut self, world: &World, cols: u16, rows: u16) -> &PixelImage {
+    fn draw(&mut self, world: &World, view: &View) -> &PixelImage {
         let (width, height) = (
-            cols as usize * PIXELS_PER_COL,
-            rows as usize * PIXELS_PER_ROW,
+            view.cols as usize * PIXELS_PER_COL,
+            view.rows as usize * PIXELS_PER_ROW,
         );
         let grid = SampleGrid {
             width,
