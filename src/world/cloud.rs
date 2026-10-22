@@ -46,11 +46,16 @@ impl Cloud {
             x: p.x - self.position.x,
             y: p.y - self.position.y,
         };
-        sdf_density(local_p, &self.circles, self.params.smoothness)
+        sdf_density(
+            local_p,
+            &self.circles,
+            self.params.smoothness,
+            self.params.edge_softness,
+        )
     }
 
-    pub fn advance(&mut self, speed: f32) {
-        self.position.x += speed;
+    pub fn advance(&mut self, dx: f32) {
+        self.position.x += dx;
     }
 
     pub fn left_edge(&self) -> f32 {
@@ -73,15 +78,17 @@ pub struct CloudParams {
     pub height: f32,
     pub lobes: u16,
     pub smoothness: f32,
+    pub edge_softness: f32,
 }
 
 impl Default for CloudParams {
     fn default() -> Self {
         Self {
-            width: 40.0,
-            height: 10.0,
+            width: 0.2,
+            height: 0.05,
             lobes: 10,
-            smoothness: 3.0,
+            smoothness: 0.015,
+            edge_softness: 0.005,
         }
     }
 }
@@ -95,11 +102,36 @@ fn smin(a: f32, b: f32, k: f32) -> f32 {
     a.min(b) - h * h * k * 0.25
 }
 
-fn sdf_density(p: Point, circles: &[Circle], k: f32) -> f32 {
+// 1.0 deep inside, 0.5 on the edge, 0.0 far outside
+fn sdf_density(p: Point, circles: &[Circle], k: f32, softness: f32) -> f32 {
     let final_sdf = circles
         .iter()
         .map(|c| sdf_circle(p, c))
         .fold(f32::INFINITY, |acc, sdf| smin(acc, sdf, k));
 
-    1.0 / (1.0 + final_sdf.exp())
+    1.0 / (1.0 + (final_sdf / softness).exp())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_case::test_case;
+
+    fn single_circle_cloud(radius: f32) -> Cloud {
+        Cloud {
+            position: Point { x: 0.0, y: 0.0 },
+            params: CloudParams::default(),
+            circles: vec![Circle {
+                center: Point { x: 0.0, y: 0.0 },
+                radius,
+            }],
+        }
+    }
+
+    #[test_case(0.0 => is greater_than 0.99; "center is solid")]
+    #[test_case(0.05 => is almost_equal_to 0.5 precision 1e-6; "edge is half")]
+    #[test_case(0.1 => is less_than 0.01; "far outside is empty")]
+    fn density_profile(x: f32) -> f32 {
+        single_circle_cloud(0.05).density_at(Point { x, y: 0.0 })
+    }
 }

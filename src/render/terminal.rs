@@ -3,9 +3,8 @@ use std::{array, time::Duration};
 use ratatui::{DefaultTerminal, buffer::Buffer, layout::Rect, widgets::StatefulWidget};
 
 use crate::{
-    point::Point,
     render::{
-        InputEvent, Renderer,
+        InputEvent, Renderer, SampleGrid,
         braille::{BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL, bayer, dots_to_braille},
     },
     world::World,
@@ -33,12 +32,9 @@ impl Drop for TerminalRenderer {
 }
 
 impl Renderer for TerminalRenderer {
-    fn viewport_size(&self) -> Result<(f32, f32)> {
+    fn aspect(&self) -> Result<f32> {
         let size = self.terminal.size()?;
-        Ok((
-            size.width as f32 * BRAILLE_COLS_PER_CELL,
-            size.height as f32 * BRAILLE_ROWS_PER_CELL,
-        ))
+        super::terminal_aspect(size.width, size.height)
     }
 
     fn render(&mut self, world: &World) -> Result<()> {
@@ -57,10 +53,9 @@ impl Renderer for TerminalRenderer {
     fn poll_input(&mut self, world: &mut World) -> Result<bool> {
         match super::next_input_event(Duration::from_secs_f64(1.0 / 30.0))? {
             Some(InputEvent::Quit) => return Ok(true),
-            Some(InputEvent::Resize { cols, rows }) => world.resize(
-                cols as f32 * BRAILLE_COLS_PER_CELL,
-                rows as f32 * BRAILLE_ROWS_PER_CELL,
-            ),
+            Some(InputEvent::Resize { cols, rows }) => {
+                world.resize(super::terminal_aspect(cols, rows)?)
+            }
             None => {}
         }
 
@@ -140,6 +135,11 @@ impl WeatherWidget<'_> {
     }
 
     fn render_clouds(&self, area: Rect, buf: &mut Buffer) {
+        let grid = SampleGrid {
+            width: (area.width as f32 * BRAILLE_COLS_PER_CELL) as usize,
+            height: (area.height as f32 * BRAILLE_ROWS_PER_CELL) as usize,
+            aspect: self.world.aspect(),
+        };
         for row in 0..(area.height as i32) {
             for col in 0..(area.width as i32) {
                 let base_wx = col * 2;
@@ -153,12 +153,7 @@ impl WeatherWidget<'_> {
                             .world
                             .clouds()
                             .iter()
-                            .map(|cloud| {
-                                cloud.density_at(Point {
-                                    x: dot_x as f32,
-                                    y: dot_y as f32,
-                                })
-                            })
+                            .map(|cloud| cloud.density_at(grid.to_world(dot_x, dot_y)))
                             .fold(0.0, f32::max); // XXX: is it worth using smin here?
                         density > bayer(dot_x % 4, dot_y % 4).max(0.1)
                     })

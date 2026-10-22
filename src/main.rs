@@ -50,8 +50,7 @@ async fn main() -> Result<()> {
         Backend::Braille => Box::new(TerminalRenderer::new()),
         Backend::Kitty => Box::new(KittyRenderer::new()?),
     };
-    let (width, height) = renderer.viewport_size()?;
-    let world = World::from_snapshot(snapshot, width, height, rand::random());
+    let world = World::from_snapshot(snapshot, renderer.aspect()?, rand::random());
 
     let mut app = App::new(world, renderer);
     app.run()

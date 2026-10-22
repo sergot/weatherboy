@@ -9,16 +9,14 @@ use color_eyre::eyre::Result;
 use crossterm::{cursor, execute, queue, terminal};
 
 use crate::{
-    point::Point,
-    render::{InputEvent, Renderer},
+    render::{InputEvent, Renderer, SampleGrid},
     world::World,
 };
 
 use protocol::Placement;
 
-// TODO: decouple world units from the backend's resolution
-const UNITS_PER_COL: f32 = 2.0;
-const UNITS_PER_ROW: f32 = 4.0;
+const PIXELS_PER_COL: usize = 2;
+const PIXELS_PER_ROW: usize = 4;
 
 const IMAGE_ID: u32 = 1;
 const PLACEMENT_ID: u32 = 1;
@@ -58,8 +56,8 @@ impl KittyRenderer {
 
     fn image_size(&self) -> (usize, usize) {
         (
-            (self.cols as f32 * UNITS_PER_COL) as usize,
-            (self.rows as f32 * UNITS_PER_ROW) as usize,
+            self.cols as usize * PIXELS_PER_COL,
+            self.rows as usize * PIXELS_PER_ROW,
         )
     }
 }
@@ -73,13 +71,17 @@ impl Drop for KittyRenderer {
 }
 
 impl Renderer for KittyRenderer {
-    fn viewport_size(&self) -> Result<(f32, f32)> {
-        let (w, h) = self.image_size();
-        Ok((w as f32, h as f32))
+    fn aspect(&self) -> Result<f32> {
+        super::terminal_aspect(self.cols, self.rows)
     }
 
     fn render(&mut self, world: &World) -> Result<()> {
         let (width, height) = self.image_size();
+        let grid = SampleGrid {
+            width,
+            height,
+            aspect: world.aspect(),
+        };
         self.rgb.clear();
         self.rgb.reserve(width * height * 3);
 
@@ -89,10 +91,7 @@ impl Renderer for KittyRenderer {
         for y in 0..height {
             let sky = lerp(SKY_ZENITH, SKY_HORIZON, y as f32 / height as f32);
             for x in 0..width {
-                let p = Point {
-                    x: x as f32,
-                    y: y as f32,
-                };
+                let p = grid.to_world(x, y);
                 let density = world
                     .clouds()
                     .iter()
@@ -127,8 +126,7 @@ impl Renderer for KittyRenderer {
                 (self.cols, self.rows) = (cols, rows);
                 self.out.write_all(&protocol::delete_all())?;
                 execute!(self.out, terminal::Clear(terminal::ClearType::All))?;
-                let (w, h) = self.image_size();
-                world.resize(w as f32, h as f32);
+                world.resize(super::terminal_aspect(cols, rows)?);
             }
             None => {}
         }
