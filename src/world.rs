@@ -2,9 +2,9 @@ mod cloud;
 mod sky;
 mod weather;
 
-use rand::{rngs::SmallRng, Rng, RngExt, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng, rngs::SmallRng};
 
-use weather::Weather;
+pub use weather::Weather;
 
 use crate::{point::Point, snapshot::WeatherSnapshot};
 
@@ -50,10 +50,6 @@ impl World {
         self.move_clouds(velocity * dt);
     }
 
-    pub fn clouds(&self) -> &[Cloud] {
-        &self.clouds
-    }
-
     pub fn weather(&self) -> &Weather {
         &self.weather
     }
@@ -94,6 +90,13 @@ impl World {
             })
             .collect()
     }
+
+    pub fn cloud_density_at(&self, p: Point) -> f32 {
+        self.clouds
+            .iter()
+            .map(|cloud| cloud.density_at(p))
+            .fold(0.0, f32::max) // XXX: is it worth using smin here?
+    }
 }
 
 fn cloud_drift(wind_kmh: f32) -> f32 {
@@ -116,11 +119,11 @@ mod tests {
     fn tick_moves_clouds_by_velocity_times_dt() {
         let wind = Wind::new(20.0, Direction::W); // from the west: blows to the right
         let mut world = World::new(16.0 / 9.0, Weather::new(0.5, None, Some(wind)), 42);
-        let before = world.clouds()[0].left_edge();
+        let before = world.clouds[0].left_edge();
 
         world.tick(0.5);
 
-        let moved = world.clouds()[0].left_edge() - before;
+        let moved = world.clouds[0].left_edge() - before;
         assert!((moved - cloud_drift(20.0) * 0.5).abs() < 1e-6);
     }
 }

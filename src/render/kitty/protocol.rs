@@ -1,7 +1,7 @@
 use std::io::Write;
 
-use base64::{engine::general_purpose::STANDARD, Engine};
-use flate2::{write::ZlibEncoder, Compression};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use flate2::{Compression, write::ZlibEncoder};
 
 const CHUNK_SIZE: usize = 4096;
 

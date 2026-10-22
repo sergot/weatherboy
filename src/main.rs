@@ -1,4 +1,5 @@
 mod app;
+mod appearance;
 mod circle;
 mod point;
 mod provider;

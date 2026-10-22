@@ -1,11 +1,12 @@
 mod protocol;
 
-use std::io::{stdout, Stdout, Write};
+use std::io::{Stdout, Write, stdout};
 
 use color_eyre::eyre::Result;
 use crossterm::{cursor, execute, queue, terminal};
 
 use crate::{
+    appearance,
     render::{Renderer, SampleGrid},
     world::World,
 };
@@ -17,13 +18,6 @@ const PIXELS_PER_ROW: usize = 4;
 
 const IMAGE_ID: u32 = 1;
 const PLACEMENT_ID: u32 = 1;
-
-type Rgb = [f32; 3];
-
-const SKY_ZENITH: Rgb = [0.24, 0.45, 0.80];
-const SKY_HORIZON: Rgb = [0.68, 0.80, 0.94];
-const CLOUD_LIT: Rgb = [0.97, 0.97, 0.98];
-const CLOUD_OVERCAST: Rgb = [0.55, 0.57, 0.62];
 
 pub struct KittyRenderer {
     out: Stdout,
@@ -82,19 +76,9 @@ impl Renderer for KittyRenderer {
         self.rgb.clear();
         self.rgb.reserve(width * height * 3);
 
-        let overcast = world.weather().cloud_cover * 0.6;
-        let cloud_color = lerp(CLOUD_LIT, CLOUD_OVERCAST, overcast);
-
         for y in 0..height {
-            let sky = lerp(SKY_ZENITH, SKY_HORIZON, y as f32 / height as f32);
             for x in 0..width {
-                let p = grid.to_world(x, y);
-                let density = world
-                    .clouds()
-                    .iter()
-                    .map(|cloud| cloud.density_at(p))
-                    .fold(0.0, f32::max);
-                let color = lerp(sky, cloud_color, density);
+                let color = appearance::sample(world, grid.to_world(x, y)).color;
                 self.rgb
                     .extend(color.map(|c| (c.clamp(0.0, 1.0) * 255.0).round() as u8));
             }
@@ -122,8 +106,4 @@ impl Renderer for KittyRenderer {
         execute!(self.out, terminal::Clear(terminal::ClearType::All))?;
         Ok(())
     }
-}
-
-fn lerp(a: Rgb, b: Rgb, t: f32) -> Rgb {
-    [0, 1, 2].map(|i| a[i] + (b[i] - a[i]) * t)
 }

@@ -1,11 +1,11 @@
 use std::array;
 
-use ratatui::{buffer::Buffer, layout::Rect, widgets::StatefulWidget, DefaultTerminal};
+use ratatui::{DefaultTerminal, buffer::Buffer, layout::Rect, widgets::StatefulWidget};
 
 use crate::{
     render::{
-        braille::{bayer, dots_to_braille, BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL},
         Renderer, SampleGrid,
+        braille::{BRAILLE_COLS_PER_CELL, BRAILLE_ROWS_PER_CELL, bayer, dots_to_braille},
     },
     world::World,
 };
@@ -141,12 +141,7 @@ impl WeatherWidget<'_> {
                     array::from_fn(|j| {
                         let dot_x = (base_wx as usize) + j;
                         let dot_y = (base_wy as usize) + i;
-                        let density = self
-                            .world
-                            .clouds()
-                            .iter()
-                            .map(|cloud| cloud.density_at(grid.to_world(dot_x, dot_y)))
-                            .fold(0.0, f32::max); // XXX: is it worth using smin here?
+                        let density = self.world.cloud_density_at(grid.to_world(dot_x, dot_y));
                         density > bayer(dot_x % 4, dot_y % 4).max(0.1)
                     })
                 });
