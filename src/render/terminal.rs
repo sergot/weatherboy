@@ -50,7 +50,7 @@ impl Renderer for TerminalRenderer {
         self.state.tick_counter = self.state.tick_counter.wrapping_add(1);
     }
 
-    fn resize(&mut self, _: u16, _: u16) -> Result<()> {
+    fn resize(&mut self, _cols: u16, _rows: u16) -> Result<()> {
         Ok(())
     }
 }

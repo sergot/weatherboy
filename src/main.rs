@@ -12,7 +12,9 @@ use color_eyre::eyre::Result;
 
 use crate::app::App;
 use crate::provider::{OpenMeteoProvider, WeatherLocation, WeatherProvider};
-use crate::render::{KittyRenderer, PixelStyle, Renderer, SmoothStyle, TerminalRenderer};
+use crate::render::{
+    DotsStyle, KittyRenderer, PixelStyle, Renderer, SmoothStyle, TerminalRenderer,
+};
 use crate::world::World;
 
 #[derive(Debug, Parser)]
@@ -27,7 +29,7 @@ struct Args {
     #[arg(long, value_enum, default_value_t = Backend::Kitty)]
     backend: Backend,
 
-    #[arg(long, value_enum, default_value_t = Style::Smooth)]
+    #[arg(long, value_enum, default_value_t = Style::Dots)]
     style: Style,
 }
 
@@ -39,6 +41,7 @@ enum Backend {
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
 enum Style {
+    Dots,
     Smooth,
 }
 
@@ -59,6 +62,7 @@ async fn main() -> Result<()> {
         Backend::Braille => Box::new(TerminalRenderer::new()),
         Backend::Kitty => {
             let style: Box<dyn PixelStyle> = match args.style {
+                Style::Dots => Box::new(DotsStyle::new()),
                 Style::Smooth => Box::new(SmoothStyle::new()),
             };
             Box::new(KittyRenderer::new(style)?)

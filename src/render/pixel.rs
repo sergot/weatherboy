@@ -1,4 +1,4 @@
-use crate::world::World;
+use crate::{appearance::Rgb, world::World};
 
 pub struct PixelImage {
     pub width: usize,
@@ -26,6 +26,10 @@ impl View {
             px_height: (rows as f32 * cell_h).round() as usize,
         }
     }
+}
+
+pub fn to_bytes(color: Rgb) -> [u8; 3] {
+    color.map(|c| (c.clamp(0.0, 1.0) * 255.0).round() as u8)
 }
 
 #[cfg(test)]

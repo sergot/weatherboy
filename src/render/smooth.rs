@@ -2,7 +2,7 @@ use crate::{
     appearance,
     render::{
         SampleGrid,
-        pixel::{PixelImage, PixelStyle, View},
+        pixel::{PixelImage, PixelStyle, View, to_bytes},
     },
     world::World,
 };
@@ -46,9 +46,7 @@ impl PixelStyle for SmoothStyle {
         for y in 0..height {
             for x in 0..width {
                 let color = appearance::sample(world, grid.to_world(x, y)).color;
-                image
-                    .rgb
-                    .extend(color.map(|c| (c.clamp(0.0, 1.0) * 255.0).round() as u8));
+                image.rgb.extend(to_bytes(color));
             }
         }
 
