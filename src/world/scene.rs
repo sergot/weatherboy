@@ -24,6 +24,7 @@ impl Ridge {
 
 pub struct Layer {
     pub material: Material,
+    pub depth: f32, // the bigger the further
     ridge: Ridge,
 }
 
@@ -33,20 +34,23 @@ pub struct Scene {
 
 impl Scene {
     pub fn hills() -> Self {
-        let layer = |material, base, waves| Layer {
+        let layer = |material, depth, base, waves| Layer {
             material,
+            depth,
             ridge: Ridge { base, waves },
         };
         Self {
             layers: vec![
-                layer(Material::Meadow, 0.85, vec![(0.01, 3.0, 0.0)]),
+                layer(Material::Meadow, 0.0, 0.85, vec![(0.01, 3.0, 0.0)]),
                 layer(
                     Material::Hill,
+                    1.0,
                     0.68,
                     vec![(0.04, 4.0, 0.0), (0.015, 11.0, 1.3)],
                 ),
                 layer(
                     Material::Hill,
+                    3.0,
                     0.58,
                     vec![(0.05, 2.5, 2.0), (0.02, 7.0, 0.4)],
                 ),
@@ -66,6 +70,7 @@ mod tests {
     fn flat(material: Material, base: f32) -> Layer {
         Layer {
             material,
+            depth: 0.0,
             ridge: Ridge {
                 base,
                 waves: vec![],

@@ -3,6 +3,8 @@ use crate::{
     world::{Material, World},
 };
 
+const HAZE_DENSITY: f32 = 0.25;
+
 const SKY_ZENITH: Rgb = [0.24, 0.45, 0.80];
 const SKY_HORIZON: Rgb = [0.68, 0.80, 0.94];
 const CLOUD_LIT: Rgb = [0.97, 0.97, 0.98];
@@ -20,7 +22,7 @@ pub struct Sample {
 pub fn sample(world: &World, p: Point) -> Sample {
     if let Some(layer) = world.scene().layer_at(p) {
         return Sample {
-            color: material_color(layer.material),
+            color: haze(material_color(layer.material), layer.depth),
         };
     }
 
@@ -29,6 +31,10 @@ pub fn sample(world: &World, p: Point) -> Sample {
     Sample {
         color: lerp(sky, cloud, world.cloud_density_at(p)),
     }
+}
+
+fn haze(color: Rgb, depth: f32) -> Rgb {
+    lerp(color, SKY_HORIZON, 1.0 - (-HAZE_DENSITY * depth).exp())
 }
 
 fn sky_color(y: f32) -> Rgb {
@@ -71,5 +77,16 @@ mod tests {
     fn overcast_clouds_are_darker() {
         let brightness = |c: Rgb| c.iter().sum::<f32>();
         assert!(brightness(cloud_color(1.0)) < brightness(cloud_color(0.0)));
+    }
+
+    #[test]
+    fn no_haze_close_up() {
+        assert_eq!(haze(HILL, 0.0), HILL);
+    }
+
+    #[test]
+    fn farther_is_closer_to_horizon() {
+        let gap = |c: Rgb| (0..3).map(|i| (c[i] - SKY_HORIZON[i]).abs()).sum::<f32>();
+        assert!(gap(haze(HILL, 3.0)) < gap(haze(HILL, 1.0)));
     }
 }
