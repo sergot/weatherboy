@@ -1,5 +1,5 @@
 use crate::{
-    appearance::{self, Rgb},
+    appearance::{self, Rgb, lerp},
     render::{
         PixelStyle, SampleGrid,
         braille::bayer,
@@ -11,6 +11,17 @@ use crate::{
 const BACKGROUND: Rgb = [0.04, 0.05, 0.08];
 const PITCH: usize = 8;
 const LEVELS: u8 = 3;
+
+// < 0.5 leaves a gap between dots
+const MAX_RADIUS: f32 = 0.45;
+
+fn radius(level: u8) -> f32 {
+    MAX_RADIUS * PITCH as f32 * (level as f32 / LEVELS as f32).sqrt()
+}
+
+fn disc_alpha(dist: f32, radius: f32) -> f32 {
+    (radius + 0.5 - dist).clamp(0.0, 1.0)
+}
 
 pub struct DotsStyle {
     image: PixelImage,
@@ -56,7 +67,9 @@ impl PixelStyle for DotsStyle {
                 let (x, y) = (px / PITCH, py / PITCH);
                 let color = if x < dots_w && y < dots_h {
                     let d = self.dots[y * dots_w + x];
-                    d.ink.map(|c| c * d.level as f32 / LEVELS as f32)
+                    let centre = |i: usize| (i as f32 + 0.5) * PITCH as f32;
+                    let dist = (px as f32 + 0.5 - centre(x)).hypot(py as f32 + 0.5 - centre(y));
+                    lerp(BACKGROUND, d.ink, disc_alpha(dist, radius(d.level)))
                 } else {
                     BACKGROUND
                 };
@@ -122,5 +135,21 @@ mod tests {
             .flat_map(|y| (0..4).map(move |x| dot([0.5, 0.5, 0.5], x, y).level as u32))
             .sum();
         assert_eq!(total as f32 / 16.0, 1.5);
+    }
+
+    #[test]
+    fn radius_grows_by_area() {
+        assert_eq!(radius(0), 0.0);
+        assert_eq!(radius(LEVELS), MAX_RADIUS * PITCH as f32);
+
+        let area = |l| radius(l).powi(2);
+        assert!((area(1) / area(LEVELS) - 1.0 / LEVELS as f32).abs() < 1e-6);
+    }
+
+    #[test]
+    fn disc_edge_is_soft() {
+        assert_eq!(disc_alpha(0.0, 3.0), 1.0); // centre
+        assert_eq!(disc_alpha(3.0, 3.0), 0.5); // edge
+        assert_eq!(disc_alpha(5.0, 3.0), 0.0); // outside
     }
 }

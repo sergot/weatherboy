@@ -19,7 +19,7 @@ pub fn sample(world: &World, p: Point) -> Sample {
     }
 }
 
-fn lerp(a: Rgb, b: Rgb, t: f32) -> Rgb {
+pub fn lerp(a: Rgb, b: Rgb, t: f32) -> Rgb {
     [0, 1, 2].map(|i| a[i] + (b[i] - a[i]) * t)
 }
 
