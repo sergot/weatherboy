@@ -1,9 +1,12 @@
 mod cloud;
+mod scene;
 mod sky;
 mod weather;
 
 use rand::{Rng, RngExt, SeedableRng, rngs::SmallRng};
 
+pub use scene::Material;
+use scene::Scene;
 pub use weather::Weather;
 
 use crate::{point::Point, snapshot::WeatherSnapshot};
@@ -18,6 +21,7 @@ pub struct World {
     aspect: f32,
     clouds: Vec<Cloud>,
     rng: SmallRng,
+    scene: Scene,
 }
 
 impl World {
@@ -29,6 +33,7 @@ impl World {
             weather,
             clouds,
             rng,
+            scene: Scene::hills(),
         }
     }
 
@@ -39,6 +44,10 @@ impl World {
     pub fn resize(&mut self, aspect: f32) {
         self.aspect = aspect;
         self.clouds = Self::spawn_clouds(&mut self.rng, aspect, self.weather.cloud_cover);
+    }
+
+    pub fn scene(&self) -> &Scene {
+        &self.scene
     }
 
     pub fn tick(&mut self, dt: f32) {

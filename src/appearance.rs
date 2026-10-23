@@ -1,9 +1,15 @@
-use crate::{point::Point, world::World};
+use crate::{
+    point::Point,
+    world::{Material, World},
+};
 
 const SKY_ZENITH: Rgb = [0.24, 0.45, 0.80];
 const SKY_HORIZON: Rgb = [0.68, 0.80, 0.94];
 const CLOUD_LIT: Rgb = [0.97, 0.97, 0.98];
 const CLOUD_OVERCAST: Rgb = [0.55, 0.57, 0.62];
+
+const MEADOW: Rgb = [0.18, 0.35, 0.12];
+const HILL: Rgb = [0.30, 0.50, 0.28];
 
 pub type Rgb = [f32; 3];
 
@@ -12,11 +18,21 @@ pub struct Sample {
 }
 
 pub fn sample(world: &World, p: Point) -> Sample {
-    let sky = lerp(SKY_ZENITH, SKY_HORIZON, p.y);
+    if let Some(layer) = world.scene().layer_at(p) {
+        return Sample {
+            color: material_color(layer.material),
+        };
+    }
+
+    let sky = sky_color(p.y);
     let cloud = cloud_color(world.weather().cloud_cover);
     Sample {
         color: lerp(sky, cloud, world.cloud_density_at(p)),
     }
+}
+
+fn sky_color(y: f32) -> Rgb {
+    lerp(SKY_ZENITH, SKY_HORIZON, y)
 }
 
 pub fn lerp(a: Rgb, b: Rgb, t: f32) -> Rgb {
@@ -27,24 +43,28 @@ fn cloud_color(cover: f32) -> Rgb {
     lerp(CLOUD_LIT, CLOUD_OVERCAST, cover * 0.6)
 }
 
+fn material_color(material: Material) -> Rgb {
+    match material {
+        Material::Meadow => MEADOW,
+        Material::Hill => HILL,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::World;
-
-    fn clear_sky() -> World {
-        World::new(
-            1.0,
-            crate::world::Weather::new(0.0, None, Default::default()),
-            0,
-        )
-    }
+    use crate::world::{Weather, World};
 
     #[test]
     fn sky_goes_from_zenith_to_horizon() {
-        let world = clear_sky();
-        assert_eq!(sample(&world, Point { x: 0.5, y: 0.0 }).color, SKY_ZENITH);
-        assert_eq!(sample(&world, Point { x: 0.5, y: 1.0 }).color, SKY_HORIZON);
+        assert_eq!(sky_color(0.0), SKY_ZENITH);
+        assert_eq!(sky_color(1.0), SKY_HORIZON);
+    }
+
+    #[test]
+    fn bottom_of_world_is_meadow() {
+        let world = World::new(1.0, Weather::new(0.0, None, Default::default()), 0);
+        assert_eq!(sample(&world, Point { x: 0.5, y: 0.99 }).color, MEADOW);
     }
 
     #[test]
