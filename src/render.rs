@@ -1,4 +1,5 @@
 mod braille;
+mod dots;
 mod kitty;
 mod pixel;
 mod smooth;
@@ -7,6 +8,7 @@ mod terminal;
 use crate::{point::Point, world::World};
 use color_eyre::eyre::Result;
 
+pub use dots::DotsStyle;
 pub use kitty::KittyRenderer;
 pub use pixel::PixelStyle;
 pub use smooth::SmoothStyle;
