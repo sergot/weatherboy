@@ -33,7 +33,11 @@ mod tests {
     use crate::world::World;
 
     fn clear_sky() -> World {
-        World::new(1.0, crate::world::Weather::new(0.0, None, None), 0)
+        World::new(
+            1.0,
+            crate::world::Weather::new(0.0, None, Default::default()),
+            0,
+        )
     }
 
     #[test]

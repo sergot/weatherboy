@@ -106,7 +106,7 @@ fn cloud_drift(wind_kmh: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use weather::{Direction, Wind};
+    use weather::Wind;
 
     #[test]
     fn drift_is_proportional_to_wind() {
@@ -117,8 +117,8 @@ mod tests {
 
     #[test]
     fn tick_moves_clouds_by_velocity_times_dt() {
-        let wind = Wind::new(20.0, Direction::W); // from the west: blows to the right
-        let mut world = World::new(16.0 / 9.0, Weather::new(0.5, None, Some(wind)), 42);
+        let wind = Wind::new(20.0, 270.0); // from the west: blows to the right
+        let mut world = World::new(16.0 / 9.0, Weather::new(0.5, None, wind), 42);
         let before = world.clouds[0].left_edge();
 
         world.tick(0.5);
